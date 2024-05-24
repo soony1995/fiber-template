@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	ctn := container.BuildContainer()
 	app := fiber.New()
+	ctn := container.BuildContainer()
 
 	route.SetupRoutes(app, ctn)
 

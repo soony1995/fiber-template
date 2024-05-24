@@ -2,8 +2,8 @@ package container
 
 import (
 	"login_module/internal/handler"
+	redisClient "login_module/internal/pkg/redis"
 	"login_module/internal/service"
-	redisClient "login_module/pkg/redis"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -12,36 +12,30 @@ import (
 type Container struct {
 	RedisClient *redis.Client
 
-	AuthService    service.AuthService
-	UserService    service.UserService
-	ProductService service.ProductService
+	AuthService *service.AuthService
+	UserService *service.UserService
 
-	AuthHandler    *handler.AuthHandler
-	UserHandler    *handler.UserHandler
-	ProductHandler *handler.ProductHandler
+	AuthHandler *handler.AuthHandler
+	UserHandler *handler.UserHandler
 }
 
 // BuildContainer는 모든 인스턴스를 생성하고 Container 구조체에 담아 반환합니다.
 func BuildContainer() *Container {
 	redisClient := redisClient.NewRedisClient()
 
-	authService := service.NewAuthService()
-	userService := service.NewUserService()
-	productService := service.NewProductService()
+	authService := service.NewAuthService(redisClient)
+	userService := service.NewUserService(redisClient)
 
 	authHandler := handler.NewAuthHandler(authService)
-	userHandler := handler.NewUserHandler(userService, redisClient)
-	productHandler := handler.NewProductHandler(productService)
+	userHandler := handler.NewUserHandler(userService)
 
 	return &Container{
 		RedisClient: redisClient,
 
-		AuthService:    authService,
-		UserService:    userService,
-		ProductService: productService,
+		AuthService: authService,
+		UserService: userService,
 
-		AuthHandler:    authHandler,
-		UserHandler:    userHandler,
-		ProductHandler: productHandler,
+		AuthHandler: authHandler,
+		UserHandler: userHandler,
 	}
 }

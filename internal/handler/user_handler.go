@@ -1,40 +1,38 @@
 package handler
 
 import (
-	"context"
-	"fmt"
+	"login_module/internal/dto"
 	"login_module/internal/service"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 )
 
-var ctx = context.Background()
-
 type UserHandler struct {
-	userService service.UserService
-	redisClient *redis.Client
+	userService *service.UserService
 }
 
-func NewUserHandler(userService service.UserService, redisClient *redis.Client) *UserHandler {
-	return &UserHandler{userService: userService, redisClient: redisClient}
+func NewUserHandler(userService *service.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
 }
 
+// GetUser 사용자 정보 조회 핸들러
 func (h *UserHandler) GetUser(c *fiber.Ctx) error {
-	id, _ := c.ParamsInt("id")
-	user := h.userService.GetUser(id)
-
-	// Redis에 사용자 ID 저장
-	err := h.redisClient.Set(ctx, fmt.Sprintf("user:%d", id), user, 0).Err()
+	id := c.Params("id")
+	userDTO, err := h.userService.GetUser(c.Context(), id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to set user in Redis")
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
-
-	
-	return c.SendString(user)
+	return c.JSON(userDTO)
 }
 
+// CreateUser 새로운 사용자 생성 핸들러
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	// 사용자 생성 로직
-	return c.SendStatus(fiber.StatusCreated)
+	userDTO := new(dto.UserDTO)
+	if err := c.BodyParser(userDTO); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse user data"})
+	}
+	if err := h.userService.CreateUser(c.Context(), userDTO); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusCreated).JSON(userDTO)
 }
