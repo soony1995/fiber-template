@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"login_module/internal/dto"
-	"login_module/internal/model"
+	"login_module/internal/application/dto"
+	"login_module/internal/domain/model"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -20,7 +20,6 @@ func NewUserService(redisClient *redis.Client) *UserService {
 	}
 }
 
-// GetUser 사용자 정보 조회
 func (s *UserService) GetUser(ctx context.Context, id string) (*dto.UserDTO, error) {
 	result, err := s.redisClient.Get(ctx, id).Result()
 	if err != nil {
@@ -39,7 +38,6 @@ func (s *UserService) GetUser(ctx context.Context, id string) (*dto.UserDTO, err
 	return userDTO, nil
 }
 
-// CreateUser 새로운 사용자 생성
 func (s *UserService) CreateUser(ctx context.Context, userDTO *dto.UserDTO) error {
 	user := &model.User{
 		ID:       userDTO.ID,

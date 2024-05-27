@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"login_module/internal/service"
+	"login_module/internal/application/service"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,7 +14,18 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-// 로그인 요청 처리
+// Login handles the login request
+// @Summary Login
+// @Description Handles user login
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param username body string true "Username"
+// @Param password body string true "Password"
+// @Failure 400 {object} string"
+// @Failure 404 {object} string"
+// @Success 200 {object} string
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
@@ -24,7 +35,6 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
 	}
 
-	// 리프레시 토큰을 쿠키로 설정
 	c.Cookie(&fiber.Cookie{
 		Name:     "refreshToken",
 		Value:    refreshToken,
@@ -34,7 +44,15 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"accessToken": accessToken})
 }
 
-// 리프레시 토큰으로 새 액세스 토큰 발급
+// RefreshToken godoc
+// @Summary      Refreshes the access token
+// @Description  Refresh the access token using the refresh token
+// @Tags         auth
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Router       /auth/refresh_token [post]
+
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refreshToken")
 
@@ -46,7 +64,14 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"accessToken": newAccessToken})
 }
 
-// 사용자 로그아웃 처리
+// Logout godoc
+// @Summary      Logs out a user
+// @Description  Logs out the user by deleting the refresh token
+// @Tags         auth
+// @Produce      json
+// @Success      200
+// @Failure      500  {object}  map[string]string
+// @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refreshToken")
 
@@ -54,7 +79,6 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to logout"})
 	}
 
-	// 리프레시 토큰 쿠키 삭제
 	c.ClearCookie("refreshToken")
 
 	return c.SendStatus(fiber.StatusOK)
