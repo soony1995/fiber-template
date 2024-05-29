@@ -4,21 +4,27 @@ import (
 	"login_module/internal/infrastructure/container"
 	"login_module/internal/presentation/http/middleware"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/swagger"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"     // swagger embed files
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
-func SetupRoutes(app *fiber.App, ctn *container.Container) {
-	app.Get("/swagger/*", swagger.HandlerDefault)
-
-	api := app.Group("/api")
+func SetupRoutes(router *gin.Engine, ctn *container.Container) {
+	api := router.Group("/api")
+	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	auth := api.Group("/auth")
-	auth.Post("/", ctn.AuthHandler.Login)
-	auth.Post("/refresh_token", ctn.AuthHandler.RefreshToken)
-	auth.Post("/logout", ctn.AuthHandler.Logout)
+	auth.POST("/login", ctn.AuthHandler.Login)
+	auth.POST("/refresh_token", ctn.AuthHandler.RefreshToken)
+	auth.POST("/logout", ctn.AuthHandler.Logout)
+
+	oauth := api.Group("/oauth")
+	oauth.GET("/:provider/start", ctn.OAuthHandler.BeginGoogleAuth)
+	oauth.GET("/:provider/callback", ctn.OAuthHandler.OAuthCallback)
+	oauth.GET("/:provider/logout", ctn.OAuthHandler.OAuthCallback)
 
 	users := api.Group("/users")
-	users.Get("/:id", middleware.TokenValid, ctn.UserHandler.GetUser)
-	users.Post("/", ctn.UserHandler.CreateUser)
+	users.Use(middleware.TokenValid())
+	users.GET("/:id", ctn.UserHandler.GetUser)
+	users.POST("/", ctn.UserHandler.CreateUser)
 }

@@ -2,26 +2,33 @@ package middleware
 
 import (
 	"login_module/pkg/jwt"
+	"net/http"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
-func TokenValid(c *fiber.Ctx) error {
-	token := c.Get("Authorization")
+func TokenValid() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("Authorization")
 
-	if token == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "no authentication token provided"})
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "no authentication token provided"})
+			c.Abort()
+			return
+		}
+
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+
+		claims, err := jwt.ParseToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			c.Abort()
+			return
+		}
+
+		c.Set("username", claims.Username)
+		c.Next()
 	}
-
-	if len(token) > 7 && token[:7] == "Bearer " {
-		token = token[7:]
-	}
-
-	claims, err := jwt.ParseToken(token)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid or expired token"})
-	}
-
-	c.Locals("username", claims.Username)
-	return c.Next()
 }

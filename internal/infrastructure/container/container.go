@@ -14,26 +14,25 @@ type Container struct {
 	AuthService *service.AuthService
 	UserService *service.UserService
 
-	AuthHandler *handler.AuthHandler
-	UserHandler *handler.UserHandler
+	AuthHandler  *handler.AuthHandler
+	OAuthHandler *handler.OAuthHandler
+	UserHandler  *handler.UserHandler
 }
 
 func BuildContainer() *Container {
 	redisClient := db.NewRedisClient()
 
+	oAuthService := service.NewOAuthService(redisClient)
 	authService := service.NewAuthService(redisClient)
 	userService := service.NewUserService(redisClient)
 
 	authHandler := handler.NewAuthHandler(authService)
+	oAuthHandler := handler.NewOAuthHandler(oAuthService)
 	userHandler := handler.NewUserHandler(userService)
 
 	return &Container{
-		RedisClient: redisClient,
-
-		AuthService: authService,
-		UserService: userService,
-
-		AuthHandler: authHandler,
-		UserHandler: userHandler,
+		AuthHandler:  authHandler,
+		OAuthHandler: oAuthHandler,
+		UserHandler:  userHandler,
 	}
 }

@@ -1,3 +1,4 @@
+basePath: /api
 definitions:
   dto.UserDTO:
     properties:
@@ -8,11 +9,18 @@ definitions:
       username:
         type: string
     type: object
+host: localhost:3000
 info:
-  contact: {}
-  description: This is an Order Api just for young people
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for a login module.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Order Api
+  title: Login Module API
   version: "1.0"
 paths:
   /auth/login:
@@ -20,34 +28,27 @@ paths:
       consumes:
       - application/json
       description: Handles user login
-      parameters:
-      - description: Username
-        in: body
-        name: username
-        required: true
-        schema:
-          type: string
-      - description: Password
-        in: body
-        name: password
-        required: true
-        schema:
-          type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad Request
           schema:
-            type: string
-        "404":
-          description: Not Found
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
-            type: string
+            additionalProperties:
+              type: string
+            type: object
       summary: Login
       tags:
       - auth
@@ -68,7 +69,28 @@ paths:
       summary: Logs out a user
       tags:
       - auth
-  /user:
+  /auth/refresh_token:
+    post:
+      description: Refresh the access token using the refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refreshes the access token
+      tags:
+      - auth
+  /users:
     post:
       consumes:
       - application/json
@@ -96,7 +118,7 @@ paths:
       summary: Create a new user
       tags:
       - user
-  /user/{id}:
+  /users/{id}:
     get:
       description: Get user details by ID
       parameters:
