@@ -21,14 +21,14 @@ func TokenValid() gin.HandlerFunc {
 			token = token[7:]
 		}
 
-		claims, err := jwt.ParseToken(token)
+		claims, err := jwt.VerifyJWTToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		c.Set("username", claims.Username)
+		c.Set("username", claims.(jwt.CustomClaims).Username)
 		c.Next()
 	}
 }

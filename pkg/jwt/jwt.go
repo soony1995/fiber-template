@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -8,14 +9,14 @@ import (
 
 var jwtKey = []byte("secret_key")
 
-type Claims struct {
+type CustomClaims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(username string) (string, error) {
 	expirationTime := time.Now().Add(15 * time.Minute)
-	claims := &Claims{
+	claims := &CustomClaims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -29,7 +30,7 @@ func GenerateToken(username string) (string, error) {
 
 func GenerateRefreshToken(username string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &Claims{
+	claims := &CustomClaims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -41,14 +42,19 @@ func GenerateRefreshToken(username string) (string, error) {
 	return tokenString, err
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
+func VerifyJWTToken(tokenString string) (jwt.Claims, error) {
+	// JWT 토큰 검증 로직 (간단한 예)
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 키 가져오는 로직 필요
+		return []byte("your-256-bit-secret"), nil
 	})
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
-	} else {
+	if err != nil {
 		return nil, err
 	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return token.Claims.(CustomClaims), nil
 }

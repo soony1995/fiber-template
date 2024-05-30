@@ -55,7 +55,7 @@ func (h *OAuthHandler) OAuthCallback(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.OAuthService.StoreTokens(user.AccessToken, user.RefreshToken); err != nil {
+	if err := h.OAuthService.StoreTokens(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
@@ -64,8 +64,7 @@ func (h *OAuthHandler) OAuthCallback(c *gin.Context) {
 
 func (h *OAuthHandler) BeginGoogleAuth(c *gin.Context) {
 	provider := c.Param("provider")
-	c.Request = c.Request.WithContext(context.WithValue(context.Background(), "provider", provider))
-	q := c.Request.URL.Query()
+	q := c.Request.WithContext(context.WithValue(context.Background(), "provider", provider)).URL.Query()
 	q.Add("provider", c.Param("provider"))
 	c.Request.URL.RawQuery = q.Encode()
 	gothic.BeginAuthHandler(c.Writer, c.Request)

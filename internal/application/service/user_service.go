@@ -2,54 +2,51 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"login_module/internal/application/dto"
 	"login_module/internal/domain/model"
+	"login_module/internal/domain/repository"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/pkg/errors"
 )
 
 type UserService struct {
-	redisClient *redis.Client
+	userRepo repository.UserRepository
 }
 
-func NewUserService(redisClient *redis.Client) *UserService {
-	return &UserService{
-		redisClient: redisClient,
-	}
+func NewUserService(userRepo repository.UserRepository) *UserService {
+	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) GetUser(ctx context.Context, id string) (*dto.UserDTO, error) {
-	result, err := s.redisClient.Get(ctx, id).Result()
+func (s *UserService) GetUser(ctx context.Context, email string) (*dto.UserDTO, error) {
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, errors.New("user not found")
-	}
-	user := &model.User{}
-	err = json.Unmarshal([]byte(result), user)
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get user")
 	}
 	userDTO := &dto.UserDTO{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
+		Email:       user.Email,
+		Name:        user.Name,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		NickName:    user.NickName,
+		Description: user.Description,
+		UserID:      user.UserID,
+		AvatarURL:   user.AvatarURL,
+		Location:    user.Location,
 	}
 	return userDTO, nil
 }
 
 func (s *UserService) CreateUser(ctx context.Context, userDTO *dto.UserDTO) error {
-	user := &model.User{
-		ID:       userDTO.ID,
-		Username: userDTO.Username,
-		Email:    userDTO.Email,
+	user := model.User{
+		Email:       userDTO.Email,
+		Name:        userDTO.Name,
+		FirstName:   userDTO.FirstName,
+		LastName:    userDTO.LastName,
+		NickName:    userDTO.NickName,
+		Description: userDTO.Description,
+		UserID:      userDTO.UserID,
+		AvatarURL:   userDTO.AvatarURL,
+		Location:    userDTO.Location,
 	}
-	userData, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
-	if err := s.redisClient.Set(ctx, user.ID, userData, 0).Err(); err != nil {
-		return errors.New("failed to save user")
-	}
-	return nil
+	return s.userRepo.SaveUser(ctx, user)
 }

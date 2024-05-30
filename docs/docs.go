@@ -212,13 +212,31 @@ const docTemplate = `{
         "dto.UserDTO": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
-                "id": {
+                "first_name": {
                     "type": "string"
                 },
-                "username": {
+                "last_name": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
