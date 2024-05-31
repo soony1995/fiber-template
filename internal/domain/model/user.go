@@ -3,7 +3,6 @@ package model
 import "time"
 
 type User struct {
-	RawData           map[string]interface{}
 	Provider          string
 	Email             string
 	Name              string

@@ -7,7 +7,7 @@ function App() {
   const [count, setCount] = useState(0)
 
   const handleLogin = () =>{
-    window.location.href = "http://localhost:3000/api/oauth/google/start"
+    window.location.href = "http://localhost:3000/api/oauth/google/login"
   }
   return (
     <>
