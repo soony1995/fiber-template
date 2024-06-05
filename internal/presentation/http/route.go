@@ -21,10 +21,8 @@ func SetupRoutes(router *gin.Engine, ctn *container.Container) {
 	oauth := api.Group("/oauth")
 	oauth.GET("/:provider/login", ctn.OAuthHandler.BeginGoogleAuth)
 	oauth.GET("/:provider/callback", ctn.OAuthHandler.OAuthCallback)
-	oauth.GET("/:provider/logout", ctn.OAuthHandler.OAuthCallback)
+	oauth.GET("/:provider/logout", middleware.ValidateIDToken(), ctn.OAuthHandler.Logout)
 
 	users := api.Group("/users")
-	users.Use(middleware.TokenValid())
-	users.GET("/:id", ctn.UserHandler.GetUser)
-	users.POST("/", ctn.UserHandler.CreateUser)
+	users.Use(middleware.ValidateIDToken())
 }

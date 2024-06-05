@@ -21,11 +21,10 @@ type Container struct {
 }
 
 func BuildContainer() *Container {
-	redisClient := config.NewRedisClient()
-	userRedisRepo := db.NewRedisUserRepository(redisClient)
+	userRedisRepo := db.NewRedisAuthRepository(config.NewRedisClient())
 
-	oAuthService := service.NewOAuthService(redisClient)
-	authService := service.NewAuthService(redisClient)
+	oAuthService := service.NewOAuthService(userRedisRepo)
+	authService := service.NewAuthService(userRedisRepo)
 	userService := service.NewUserService(userRedisRepo)
 
 	authHandler := handler.NewAuthHandler(authService)

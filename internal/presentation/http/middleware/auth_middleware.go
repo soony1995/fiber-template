@@ -1,34 +1,37 @@
 package middleware
 
 import (
-	"login_module/pkg/jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/api/idtoken"
+	"os"
 )
 
-func TokenValid() gin.HandlerFunc {
+func ValidateIDToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
-
-		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "no authentication token provided"})
-			c.Abort()
-			return
-		}
-
-		if len(token) > 7 && token[:7] == "Bearer " {
-			token = token[7:]
-		}
-
-		claims, err := jwt.VerifyJWTToken(token)
+		tokenString, err := c.Cookie("id_token")
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
-			c.Abort()
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token cookie not found"})
 			return
 		}
 
-		c.Set("username", claims.(jwt.CustomClaims).Username)
+		// ID 토큰 검증
+		payload, err := idtoken.Validate(c.Request.Context(), tokenString, os.Getenv("GOOGLE_CLIENT_ID"))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid ID token"})
+			return
+		}
+
+		// 페이로드에서 userUUID 추출
+		userUUID, ok := payload.Claims["sub"].(string)
+		if !ok || userUUID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "userUUID not found in token"})
+			return
+		}
+
+		// userUUID를 컨텍스트에 설정
+		c.Set("userUUID", userUUID)
 		c.Next()
 	}
 }

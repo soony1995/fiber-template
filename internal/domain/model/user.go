@@ -1,21 +1,21 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
-	Provider          string
-	Email             string
-	Name              string
-	FirstName         string
-	LastName          string
-	NickName          string
-	Description       string
-	UserID            string
-	AvatarURL         string
-	Location          string
-	AccessToken       string
-	AccessTokenSecret string
-	RefreshToken      string
-	ExpiresAt         time.Time
-	IDToken           string
+	UserUUID     string
+	Email        string `json:"email"`
+	Password     string
+	NickName     string
+	Provider     string
+	RegisteredAt time.Time
+	LastLoginAt  time.Time
+}
+
+type SaveRefreshToken struct {
+	UserUUID     string `json:"user_uuid"`
+	RefreshToken string `json:"refresh_token"`
+	Exp          int    `json:"exp"`
 }
