@@ -1,71 +1,58 @@
 package handler
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"io"
+	"golang.org/x/oauth2"
 	"log"
 	"login_module/internal/application/dto"
-	"login_module/internal/application/service"
+	"login_module/internal/application/service/oauth"
 	"login_module/internal/infrastructure/config"
-	"login_module/pkg/util"
 	"net/http"
-	"time"
-
-	"golang.org/x/oauth2"
 
 	"github.com/gin-gonic/gin"
 )
 
 type OAuthHandler struct {
-	OAuthService *service.OAuthService
+	OAuthService *oauth.OAuthService
 }
 
-func NewOAuthHandler(oAuthService *service.OAuthService) *OAuthHandler {
+func NewOAuthHandler(oAuthService *oauth.OAuthService) *OAuthHandler {
 	return &OAuthHandler{
 		OAuthService: oAuthService,
 	}
 }
 
 func (h *OAuthHandler) OAuthCallback(c *gin.Context) {
-	code := c.Query("code")
-	user, err := getUserDataFromGoogle(code)
-	if err != nil {
-		log.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-		return
-	}
 	m := dto.OAuthDTO{
-		UserUUID: user.UserInfo.ID,
+		Code:     c.Query("code"),
 		Provider: c.Param("provider"),
-		Token: dto.AuthToken{
-			IDToken:      user.IDToken,
-			RefreshToken: user.RefreshToken,
-			ExpiresIn:    user.ExpiresIn,
-		},
 	}
-	if err := h.OAuthService.Login(c.Request.Context(), m); err != nil {
+	res, err := h.OAuthService.Login(c.Request.Context(), m)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	accessExp, _ := util.GetenvInt("HTTP_COOKIE_ACCESS_EXPIRY")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.SetCookie("id_token", m.Token.IDToken, accessExp, "/", "localhost", false, true)
+	c.SetCookie("id_token", res.IDToken, res.ExpiresIn, "/", "localhost", false, true)
 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:5173/")
 }
 
-func (h *OAuthHandler) BeginGoogleAuth(c *gin.Context) {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
+func (h *OAuthHandler) BeginOAuth(c *gin.Context) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	oauthState := base64.URLEncoding.EncodeToString(b)
-	u := config.GoogleOauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
-	c.Redirect(http.StatusTemporaryRedirect, u)
+	provider := c.Param("provider")
+	var url string
+	switch provider {
+	case "google":
+		url = config.GoogleOauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	case "kakao":
+		url = config.KakaoOauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOffline)
+	}
+	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func (h *OAuthHandler) Logout(c *gin.Context) {
@@ -86,35 +73,3 @@ func (h *OAuthHandler) Logout(c *gin.Context) {
 OAuth 콜백 처리: 사용자가 OAuth 제공자에서 인증을 마치면, 제공자는 사용자를 리디렉션 URI로 돌려보내면서 초기에 보낸 상태 값(state)을 반환합니다.
 서버는 반환된 상태 값과 oauthstate 쿠키에 저장된 값을 비교합니다. 이 값들이 일치하면 요청이 유효한 것으로 간주하고, 그렇지 않으면 요청을 거부합니다.
 */
-
-func getUserDataFromGoogle(code string) (*dto.OAuthResponse, error) {
-	token, err := config.GoogleOauthConfig.Exchange(context.Background(), code)
-	if err != nil {
-		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
-	}
-	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
-	}
-	defer response.Body.Close()
-	contents, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed read response: %s", err.Error())
-	}
-	oauthRes := dto.OAuthResponse{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		TokenType:    token.TokenType,
-		Expiry:       token.Expiry,
-	}
-	if !token.Expiry.IsZero() {
-		oauthRes.ExpiresIn = time.Until(token.Expiry).Seconds()
-	}
-	if idToken, ok := token.Extra("id_token").(string); ok {
-		oauthRes.IDToken = idToken
-	}
-	if err := json.Unmarshal(contents, &oauthRes.UserInfo); err != nil {
-		return nil, err
-	}
-	return &oauthRes, nil
-}

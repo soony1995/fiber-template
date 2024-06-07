@@ -58,3 +58,17 @@ func VerifyJWTToken(tokenString string) (jwt.Claims, error) {
 	}
 	return token.Claims.(CustomClaims), nil
 }
+
+func ParseIDToken(idToken string) (string, error) {
+	token, _, err := new(jwt.Parser).ParseUnverified(idToken, jwt.MapClaims{})
+	if err != nil {
+		return "", fmt.Errorf("error parsing token: %s", err.Error())
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		// "sub"는 일반적으로 사용자의 고유 ID를 나타냅니다.
+		if userID, ok := claims["sub"].(string); ok {
+			return userID, nil
+		}
+	}
+	return "", fmt.Errorf("user ID not found in token")
+}

@@ -15,7 +15,7 @@ type User struct {
 }
 
 type SaveRefreshToken struct {
-	UserUUID     string `json:"user_uuid"`
-	RefreshToken string `json:"refresh_token"`
-	Exp          int    `json:"exp"`
+	UserUUID              string `json:"user_uuid"`
+	RefreshToken          string `json:"refresh_token"`
+	RefreshTokenExpiresIn int    `json:"refresh_token_expires_in,omitempty"`
 }

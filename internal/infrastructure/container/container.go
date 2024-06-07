@@ -2,6 +2,7 @@ package container
 
 import (
 	"login_module/internal/application/service"
+	"login_module/internal/application/service/oauth"
 	"login_module/internal/infrastructure/config"
 	"login_module/internal/infrastructure/db"
 	"login_module/internal/presentation/http/handler"
@@ -12,7 +13,7 @@ import (
 type Container struct {
 	RedisClient *redis.Client
 
-	AuthService *service.AuthService
+	AuthService *oauth.AuthService
 	UserService *service.UserService
 
 	AuthHandler  *handler.AuthHandler
@@ -23,8 +24,8 @@ type Container struct {
 func BuildContainer() *Container {
 	userRedisRepo := db.NewRedisAuthRepository(config.NewRedisClient())
 
-	oAuthService := service.NewOAuthService(userRedisRepo)
-	authService := service.NewAuthService(userRedisRepo)
+	oAuthService := oauth.NewOAuthService(userRedisRepo)
+	authService := oauth.NewAuthService(userRedisRepo)
 	userService := service.NewUserService(userRedisRepo)
 
 	authHandler := handler.NewAuthHandler(authService)

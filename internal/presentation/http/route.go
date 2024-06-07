@@ -19,7 +19,7 @@ func SetupRoutes(router *gin.Engine, ctn *container.Container) {
 	auth.POST("/logout", ctn.AuthHandler.Logout)
 
 	oauth := api.Group("/oauth")
-	oauth.GET("/:provider/login", ctn.OAuthHandler.BeginGoogleAuth)
+	oauth.GET("/:provider/login", ctn.OAuthHandler.BeginOAuth)
 	oauth.GET("/:provider/callback", ctn.OAuthHandler.OAuthCallback)
 	oauth.GET("/:provider/logout", middleware.ValidateIDToken(), ctn.OAuthHandler.Logout)
 

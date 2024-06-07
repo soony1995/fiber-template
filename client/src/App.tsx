@@ -1,13 +1,24 @@
-import { useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
 function App() {
-    const [count, setCount] = useState(0);
-    const handleLogin = () => {
-        window.location.href = "http://localhost:3000/api/oauth/google/login";
+    const handleLogin = (provider: string) => {
+        let url = "";
+        switch(provider) {
+            case 'google':
+                url = "http://localhost:3000/api/oauth/google/login";
+                break;
+            case 'kakao':
+                url = "http://localhost:3000/api/oauth/kakao/login";
+                break;
+            default:
+                console.error('Unsupported provider');
+                return;
+        }
+        window.location.href = url;
     };
+
     const handleLogout = () => {
         fetch("http://localhost:3000/api/oauth/google/logout", {
             credentials: 'include'  // This is to include cookies in the request
@@ -24,6 +35,7 @@ function App() {
             })
             .catch(error => console.error('Logout failed', error));
     };
+
     return (
         <>
             <div>
@@ -35,17 +47,12 @@ function App() {
                 </a>
             </div>
             <h1>Vite + React</h1>
-            <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
-            </div>
-
             <div>
-                <button onClick={handleLogin}>Login with Google</button>
+                <button onClick={() => handleLogin('google')}>Login with Google</button>
+                <button onClick={handleLogout}>Logout</button>
+            </div>
+            <div>
+                <button onClick={() => handleLogin('kakao')}>Login with Kakao</button>
                 <button onClick={handleLogout}>Logout</button>
             </div>
             <p className="read-the-docs">
