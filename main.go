@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	_ "login_module/docs"
-	"login_module/internal/infrastructure/container"
-	"login_module/internal/presentation/http"
+	"login_module/internal/infrastructure/config"
+	"login_module/internal/presentation/http/router"
 	"time"
 )
 
@@ -25,9 +25,20 @@ import (
 // @host localhost:3000
 // @BasePath /api
 func main() {
-	r := gin.Default()
+	// Load environment variables
+	config.InitEnv()
 
-	ctn := container.BuildContainer()
+	// Initialize logger
+	config.InitLog()
+
+	// Initialize database connection
+	//db := config.ConnectToDB()
+
+	// Initialize Redis client
+	redisClient := config.NewRedisClient()
+
+	// Create a new Gin router
+	r := gin.Default()
 
 	// Configure CORS to handle requests from your React frontend
 	r.Use(cors.New(cors.Config{
@@ -39,10 +50,11 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	http.SetupRoutes(r, ctn)
+	// Initialize routes
+	router.InitRoutes(r, redisClient)
 
-	err := r.Run(":3000")
-	if err != nil {
+	// Run the server
+	if err := r.Run(":3000"); err != nil {
 		return
 	}
 }

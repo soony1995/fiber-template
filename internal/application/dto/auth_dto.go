@@ -1,10 +1,13 @@
 package dto
 
-import "time"
+import (
+	"golang.org/x/oauth2"
+	"time"
+)
 
 type OAuthDTO struct {
-	Code     string `json:"code"`
-	Provider string `json:"provider"`
+	Code     string         `json:"code"`
+	Provider *oauth2.Config `json:"provider"`
 }
 
 type OAuthResponse struct {

@@ -19,21 +19,32 @@ function App() {
         window.location.href = url;
     };
 
-    const handleLogout = () => {
-        fetch("http://localhost:3000/api/oauth/google/logout", {
-            credentials: 'include'  // This is to include cookies in the request
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Logout successful', data);
-                window.location.href = '/';
-            })
-            .catch(error => console.error('Logout failed', error));
+    const handleLogout = async (provider: string) => {
+        try {
+            const baseUrl = "http://localhost:3000/api/oauth/";
+            const supportedProviders = ['google', 'kakao'];
+
+            if (!supportedProviders.includes(provider)) {
+                console.error('Unsupported provider');
+                return;
+            }
+
+            const url = `${baseUrl}${provider}/logout`;
+
+            const response = await fetch(url, {
+                credentials: 'include'  // This is to include cookies in the request
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            console.log('Logout successful', data);
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
     };
 
     return (
@@ -49,11 +60,11 @@ function App() {
             <h1>Vite + React</h1>
             <div>
                 <button onClick={() => handleLogin('google')}>Login with Google</button>
-                <button onClick={handleLogout}>Logout</button>
+                <button onClick={() => handleLogout('google')}>Logout</button>
             </div>
             <div>
                 <button onClick={() => handleLogin('kakao')}>Login with Kakao</button>
-                <button onClick={handleLogout}>Logout</button>
+                <button onClick={() => handleLogout('kakao')}>Logout</button>
             </div>
             <p className="read-the-docs">
                 Click on the Vite and React logos to learn more

@@ -9,7 +9,7 @@ import (
 )
 
 var GoogleOauthConfig = &oauth2.Config{
-	RedirectURL:  "http://localhost:3000/api/oauth/google/callback",
+	RedirectURL:  os.Getenv("GOOGLE_REDIRECT_PATH"),
 	ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 	ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/photoslibrary.readonly"},
@@ -17,7 +17,7 @@ var GoogleOauthConfig = &oauth2.Config{
 }
 
 var KakaoOauthConfig = &oauth2.Config{
-	RedirectURL: "http://localhost:3000/api/oauth/kakao/callback",
+	RedirectURL: os.Getenv("KAKAO_REDIRECT_PATH"),
 	ClientID:    os.Getenv("KAKAO_CLIENT_ID"),
 	Endpoint:    kakao.Endpoint,
 }

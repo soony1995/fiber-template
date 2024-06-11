@@ -2,13 +2,16 @@ package config
 
 import (
 	"github.com/go-redis/redis/v8"
+	"os"
 )
 
-// NewRedisClient initializes and returns a new Redis client
 func NewRedisClient() *redis.Client {
+	addr := os.Getenv("REDIS_ADDR")
+	password := os.Getenv("REDIS_PASSWORD")
+
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     addr,
+		Password: password,
 		DB:       0,
 	})
 
