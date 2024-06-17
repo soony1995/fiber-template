@@ -19,7 +19,7 @@ func NewRedisAuthRepository(client *redis.Client) repository.AuthRepository {
 }
 
 func (r *redisAuthRepository) SaveRefreshToken(ctx context.Context, m model.SaveRefreshToken) error {
-	err := r.client.Set(ctx, m.UserUUID, m.RefreshToken, time.Duration(m.RefreshTokenExpiresIn)*time.Second).Err()
+	err := r.client.HSet(ctx, m.UserUUID, m.RefreshToken, time.Duration(m.RefreshTokenExpiresIn)*time.Second).Err()
 	if err != nil {
 		return errors.Wrap(err, "failed to save refresh token in redis")
 	}

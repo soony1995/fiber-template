@@ -14,27 +14,29 @@ import (
 
 type OAuthHandler struct {
 	oauthService *service.OAuthService
-	providers    map[string]*oauth2.Config
+	config       map[string]*oauth2.Config
 }
 
 func NewOAuthHandler(oAuthService *service.OAuthService, providers map[string]*oauth2.Config) *OAuthHandler {
 	return &OAuthHandler{
 		oauthService: oAuthService,
-		providers:    providers,
+		config:       providers,
 	}
 }
 
 func (h *OAuthHandler) OAuthCallback(c *gin.Context) {
+	provider := c.Param("provider")
 	m := dto.OAuthDTO{
 		Code:     c.Query("code"),
-		Provider: h.providers[c.Param("provider")],
+		Provider: provider,
+		Config:   h.config[provider],
 	}
 	res, err := h.oauthService.Login(c.Request.Context(), m)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	c.SetCookie("id_token", res.IDToken, res.ExpiresIn, "/", "localhost", false, true)
+	c.SetCookie(provider, res.IDToken, res.TokenExpiresIn, "/", "localhost", false, true)
 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:5173/")
 }
 
@@ -46,7 +48,8 @@ func (h *OAuthHandler) BeginOAuth(c *gin.Context) {
 	}
 	oauthState := base64.URLEncoding.EncodeToString(b)
 	provider := c.Param("provider")
-	url := h.providers[provider].AuthCodeURL(oauthState, oauth2.AccessTypeOffline)
+	// TODO: kakao의 경우 동의 화면이 나타나지 않고 바로 로그인되는 현상 발견
+	url := h.config[provider].AuthCodeURL(oauthState, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -56,6 +59,6 @@ func (h *OAuthHandler) Logout(c *gin.Context) {
 		log.Println("Failed to blacklist ID token:", err)
 		return
 	}
-	c.SetCookie("id_token", "", -1, "/", "localhost", false, true)
+	c.SetCookie(c.Param("provider"), "", -1, "/", "localhost", false, true)
 	c.Redirect(http.StatusTemporaryRedirect, "http://localhost:5173/")
 }

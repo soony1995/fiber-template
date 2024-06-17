@@ -7,6 +7,6 @@ import (
 
 type AuthRepository interface {
 	SaveRefreshToken(c context.Context, token model.SaveRefreshToken) error
-	GetUserByUserUUID(c context.Context, email string) (model.User, error)
 	DeleteIDToken(c context.Context, userUUID string) error
+	GetUserByUserUUID(c context.Context, email string) (model.User, error)
 }

@@ -1,42 +1,15 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"strconv"
 )
 
-var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
-
-func getenvStr(key string) (string, error) {
-	v := os.Getenv(key)
-	if v == "" {
-		return v, ErrEnvVarEmpty
-	}
-	return v, nil
-}
-
 func GetenvInt(key string) (int, error) {
-	s, err := getenvStr(key)
-	if err != nil {
-		return 0, err
-	}
+	s := os.Getenv(key)
 	v, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, err
 	}
 	return v, nil
 }
-
-//
-//func GetenvBool(key string) (bool, error) {
-//	s, err := getenvStr(key)
-//	if err != nil {
-//		return false, err
-//	}
-//	v, err := strconv.ParseBool(s)
-//	if err != nil {
-//		return false, err
-//	}
-//	return v, nil
-//}

@@ -10,7 +10,8 @@ import (
 
 func ValidateIDToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString, err := c.Cookie("id_token")
+		// TODO
+		tokenString, err := c.Cookie(c.Param("provider"))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token cookie not found"})
 			return
