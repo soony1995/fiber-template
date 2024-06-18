@@ -1,40 +1,33 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"github.com/go-redis/redis/v8"
+	"login_module/internal/application/dto"
+	"login_module/internal/domain/model"
 	"login_module/internal/domain/repository"
-	"login_module/pkg/jwt"
 )
 
 type AuthService struct {
-	redisClient repository.AuthRepository
+	userRepository repository.UserRepository
+	redis          *redis.Client
 }
 
-func NewAuthService(r repository.AuthRepository) *AuthService {
-	return &AuthService{redisClient: r}
-}
-
-func (s *AuthService) Login(username, password string) (accessToken, refreshToken string, err error) {
-	if username != "expected" || password != "password" {
-		return "", "", errors.New("invalid credentials")
+func NewAuthService(userRepo repository.UserRepository, redis *redis.Client) *AuthService {
+	return &AuthService{
+		userRepository: userRepo,
+		redis:          redis,
 	}
+}
 
-	accessToken, err = jwt.GenerateToken(username)
+func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest) (*model.User, error) {
+	user, err := s.userRepository.FindByUsername(ctx, req.Username)
 	if err != nil {
-		return "", "", err
+		return nil, errors.New("user not found")
 	}
-	refreshToken, err = jwt.GenerateRefreshToken(username)
-	if err != nil {
-		return "", "", err
+	if !user.Authenticate(req.Password) {
+		return nil, errors.New("invalid credentials")
 	}
-
-	return accessToken, refreshToken, nil
-}
-
-func (s *AuthService) RefreshToken(refreshToken string) (newAccessToken string, err error) {
-	return newAccessToken, nil
-}
-
-func (s *AuthService) Logout(refreshToken string) error {
-	return nil
+	return user, nil
 }

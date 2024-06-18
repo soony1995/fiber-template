@@ -2,11 +2,14 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	_ "login_module/docs"
 	"login_module/internal/infrastructure/config"
 	"login_module/internal/presentation/http/router"
+	"os"
 	"time"
 )
 
@@ -32,13 +35,18 @@ func main() {
 	config.InitLog()
 
 	// Initialize database connection
-	//db := config.ConnectToDB()
+	db := config.ConnectToDB()
 
 	// Initialize Redis client
 	redisClient := config.NewRedisClient()
 
-	// Create a new Gin router
 	r := gin.Default()
+
+	store, err := redis.NewStore(10, "tcp", "localhost:6379", "", []byte(os.Getenv("SESSION_SECRET")))
+	if err != nil {
+		panic(err)
+	}
+	r.Use(sessions.Sessions("cookie_api", store))
 
 	// Configure CORS to handle requests from your React frontend
 	r.Use(cors.New(cors.Config{
@@ -51,7 +59,7 @@ func main() {
 	}))
 
 	// Initialize routes
-	router.InitRoutes(r, redisClient)
+	router.InitRoutes(r, db, redisClient)
 
 	// Run the server
 	if err := r.Run(":3000"); err != nil {

@@ -1,22 +1,11 @@
 package model
 
-import (
-	"time"
-)
-
 type User struct {
-	UserUUID     string
-	Email        string `json:"email"`
-	Password     string
-	NickName     string
-	Provider     string
-	RegisteredAt time.Time
-	LastLoginAt  time.Time
+	ID       uint   `gorm:"primaryKey"`
+	Username string `gorm:"unique;not null"`
+	Password string `gorm:"not null"`
 }
 
-type SaveRefreshToken struct {
-	Provider              string `json:"provider"`
-	UserUUID              string `json:"user_uuid"`
-	RefreshToken          string `json:"refresh_token"`
-	RefreshTokenExpiresIn int    `json:"refresh_token_expires_in,omitempty"`
+func (u *User) Authenticate(password string) bool {
+	return u.Password == password
 }
